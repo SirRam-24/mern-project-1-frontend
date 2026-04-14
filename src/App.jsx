@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import NoteEditor from './pages/NoteEditor'
+import SharedNote from './pages/SharedNote'
 
 function ProtectedRoute({ children }) {
   const { token, loading } = useAuth();
@@ -21,57 +22,68 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const App = () => {
   const { token } = useAuth();
 
   return (
-    <Routes>
-      <Route 
-        path="/login" 
-        element={token ? <Navigate to="/" replace /> : <Login />} 
-      />
-      
-      <Route 
-        path="/sign-up" 
-        element={token ? <Navigate to="/" replace /> : <Register />} 
-      />
+    <>
+      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
+      <Routes>
+        <Route 
+          path="/login" 
+          element={token ? <Navigate to="/" replace /> : <Login />} 
+        />
+        
+        <Route 
+          path="/sign-up" 
+          element={token ? <Navigate to="/" replace /> : <Register />} 
+        />
 
-      <Route 
-        path="/" 
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/notes/new" 
-        element={
-          <ProtectedRoute>
-            <NoteEditor />
-          </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/notes/edit/:id" 
-        element={
-          <ProtectedRoute>
-            <NoteEditor />
-          </ProtectedRoute>
-        } 
-      />
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/notes/new" 
+          element={
+            <ProtectedRoute>
+              <NoteEditor />
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/notes/edit/:id" 
+          element={
+            <ProtectedRoute>
+              <NoteEditor />
+            </ProtectedRoute>
+          } 
+        />
 
-      <Route 
-        path="/profile"  
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } 
-      />
-    </Routes>
+        <Route 
+          path="/share/:shareid" 
+          element={<SharedNote />} 
+        />
+
+        <Route 
+          path="/profile"  
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          } 
+        />
+      </Routes>
+    </>
   )
 }
 

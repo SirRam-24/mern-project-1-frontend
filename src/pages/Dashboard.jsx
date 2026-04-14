@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import NoteCard from '../components/NoteCard';
 import { fetchApi } from '../api/api';
-import { Plus, SlidersHorizontal, Loader2, StickyNote, Pin, Search } from 'lucide-react';
+import { Plus, SlidersHorizontal, Loader2, StickyNote, Pin, Search, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 const Dashboard = () => {
   const [notes, setNotes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('newest'); // 'newest' | 'oldest'
+  const [filter, setFilter] = useState('newest'); 
 
   const [isLoading, setIsLoading] = useState(true);
+  const [sharingNoteId, setSharingNoteId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -77,6 +79,56 @@ const Dashboard = () => {
       console.error(err);
     }
   };
+
+  const invokeShare = async (title, shareUrl) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: 'Check out this note!',
+          url: shareUrl,
+        });
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+           await navigator.clipboard.writeText(shareUrl);
+           toast.success('Share link copied to clipboard!');
+        }
+      }
+    } else {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success('Share link copied to clipboard!');
+    }
+  };
+
+  const handleShare = async (note) => {
+    if (note.shareInfo && note.shareInfo.shared && note.shareInfo.shareid) {
+      const shareUrl = `${window.location.origin}/share/${note.shareInfo.shareid}`;
+      await invokeShare(note.title, shareUrl);
+      return;
+    }
+
+    setSharingNoteId(note._id);
+    try {
+      const data = await fetchApi('/notes/share', {
+        method: 'POST',
+        body: JSON.stringify({ noteid: note._id })
+      });
+      if (data.ok && data.ShareId) {
+        setNotes(prev => prev.map(n => n._id === note._id ? { 
+          ...n, 
+          shareInfo: { shared: true, shareid: data.ShareId } 
+        } : n));
+        const shareUrl = `${window.location.origin}/share/${data.ShareId}`;
+        await invokeShare(note.title, shareUrl);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to share note.');
+    } finally {
+      setSharingNoteId(null);
+    }
+  };
+
 
   const openCreateModal = () => {
     navigate('/notes/new');
@@ -187,6 +239,8 @@ const Dashboard = () => {
                       onEdit={openEditModal}
                       onDelete={handleDelete}
                       onPin={handlePin}
+                      onShare={handleShare}
+                      isSharing={sharingNoteId === note._id}
                     />
                   ))}
                 </div>
@@ -206,6 +260,8 @@ const Dashboard = () => {
                       onEdit={openEditModal}
                       onDelete={handleDelete}
                       onPin={handlePin}
+                      onShare={handleShare}
+                      isSharing={sharingNoteId === note._id}
                     />
                   ))}
                 </div>
